@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+examples_dir=[please_write_examples_directory]
+
+# -------------------------------- Halo Example 1 --------------------------------
+root_dir=$examples_dir/halo/example_1
+
+cd $root_dir
+ntrials=100
+python3 gen_random_halos.py $ntrials
+
+fname_f90=example_1_halo
+FC="mpif90 -g -fbacktrace -Wall -Wextra -pedantic -fcheck=all -finit-real=snan -ffpe-trap=invalid -std=f2018 -cpp -lmpi"
+$FC  -o ${fname_f90}_cpu ./../../../src/diezdecomp_core.f90 ./../../../src/diezdecomp_api_generic.f90 ./../../../src/diezdecomp_api_cans.f90 ${fname_f90}.f90
+cp -f ${fname_f90}_cpu ${fname_f90}_gpu
+chmod u+x ${fname_f90}_cpu
+chmod u+x ${fname_f90}_gpu
+
+cd $root_dir
+for my_fname in $root_dir/trials/* ; do
+  nproc=$(head -1  $my_fname | grep -o "[0-9]")
+  mpirun -n $nproc  ./${fname_f90}_cpu $(basename $my_fname)
+done
+
+
+# -------------------------------- Transpose Example 1 --------------------------------
+root_dir=$examples_dir/transpose/example_1
+
+cd $root_dir
+fname_f90=example_1_transp_xy_8
+FC="mpif90 -g -fbacktrace -Wall -Wextra -pedantic -fcheck=all -finit-real=snan -ffpe-trap=invalid -std=f2018 -cpp -lmpi"
+$FC  -o ${fname_f90}_cpu ./../../../src/diezdecomp_core.f90 ./../../../src/diezdecomp_api_generic.f90 ./../../../src/diezdecomp_api_cans.f90 ${fname_f90}.f90
+cp -f ${fname_f90}_cpu ${fname_f90}_gpu
+chmod u+x ${fname_f90}_cpu
+chmod u+x ${fname_f90}_gpu
+
+nproc=8
+mpirun -n $nproc  ./${fname_f90}_cpu $(basename $my_fname)
+
+
+# -------------------------------- Transpose Example 2 --------------------------------
+root_dir=$examples_dir/transpose/example_2
+
+cd $root_dir
+ntrials=100
+python3 gen_random_transposes.py $ntrials
+
+fname_f90=example_2_transp_generalized
+FC="mpif90 -g -fbacktrace -Wall -Wextra -pedantic -fcheck=all -finit-real=snan -ffpe-trap=invalid -std=f2018 -cpp -lmpi"
+$FC  -o ${fname_f90}_cpu ./../../../src/diezdecomp_core.f90 ./../../../src/diezdecomp_api_generic.f90 ./../../../src/diezdecomp_api_cans.f90 ${fname_f90}.f90
+cp -f ${fname_f90}_cpu ${fname_f90}_gpu
+chmod u+x ${fname_f90}_cpu
+chmod u+x ${fname_f90}_gpu
+
+cd $root_dir
+for my_fname in $root_dir/trials/* ; do
+  nproc=$(head -1  $my_fname | grep -o "[0-9]")
+  mpirun -n $nproc  ./${fname_f90}_cpu $(basename $my_fname)
+done
+
+
+# -------------------------------- Transpose Example 3 --------------------------------
+root_dir=$examples_dir/transpose/example_3
+
+cd $root_dir
+ntrials=100
+python3 gen_random_transposes.py $ntrials
+
+fname_f90=example_3_transp_generalized
+FC="mpif90 -g -fbacktrace -Wall -Wextra -pedantic -fcheck=all -finit-real=snan -ffpe-trap=invalid -std=f2018 -cpp -lmpi"
+$FC  -o ${fname_f90}_cpu ./../../../src/diezdecomp_core.f90 ./../../../src/diezdecomp_api_generic.f90 ./../../../src/diezdecomp_api_cans.f90 ${fname_f90}.f90
+cp -f ${fname_f90}_cpu ${fname_f90}_gpu
+chmod u+x ${fname_f90}_cpu
+chmod u+x ${fname_f90}_gpu
+
+cd $root_dir
+for my_fname in $root_dir/trials/* ; do
+  nproc=$(head -1  $my_fname | grep -o "[0-9]")
+  mpirun -n $nproc  ./${fname_f90}_cpu $(basename $my_fname)
+done
+

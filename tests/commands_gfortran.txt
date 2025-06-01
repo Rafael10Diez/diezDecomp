@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+root_dir=($PWD)
+
+cd $root_dir
+
+# ------------------------------- trials -------------------------------
+
+ntrials=100
+python3 $root_dir/transpose/transposes.py $ntrials
+python3 $root_dir/halo/halos_asym.py $ntrials
+
+# ------------------------------- compile -------------------------------
+
+FC="mpif90 -g -fbacktrace -Wall -Wextra -pedantic -fcheck=all -finit-real=snan -ffpe-trap=invalid -std=f2018 -cpp -lmpi"
+
+cd $root_dir/transpose
+$FC  -o main_transp_cpu ./../../src/diezdecomp_core.f90 ./../../src/diezdecomp_api_generic.f90 ./../../src/diezdecomp_api_cans.f90 main_transp.f90
+cp -f main_transp_cpu main_transp_gpu
+chmod u+x main_transp_cpu
+chmod u+x main_transp_gpu
+
+cd $root_dir/halo
+$FC -o main_halo_cpu ./../../src/diezdecomp_core.f90 ./../../src/diezdecomp_api_generic.f90 ./../../src/diezdecomp_api_cans.f90 main_halo.f90
+cp -f main_halo_cpu main_halo_gpu
+chmod u+x main_halo_cpu
+chmod u+x main_halo_gpu
+
+# --------------------------------- begin job ----------------------------------
+
+cd $root_dir
+
+# ------------------------------ transpose ------------------------------
+cd $root_dir/transpose
+for trial_subfolder in $root_dir/transpose/trials/* ; do
+  cd $trial_subfolder/input_transp
+  nproc=$(ls *__info.dat | wc -l)
+  cd $root_dir/transpose
+  input_arg="$(basename -- $trial_subfolder)"
+  echo $trial_subfolder $nproc $input_arg
+  if [ -e "$trial_subfolder/use_gpu.txt" ]
+  then
+      echo "Running on GPU: ${trial_subfolder}"
+      mpirun -n $nproc  ./main_transp_gpu $input_arg
+  else
+      echo "Running on CPU: ${trial_subfolder}"
+      mpirun -n $nproc  ./main_transp_cpu $input_arg
+  fi
+done
+
+# ------------------------------ halo ------------------------------
+cd $root_dir/halo
+for trial_subfolder in $root_dir/halo/trials/* ; do
+  cd $trial_subfolder/input_halo
+  nproc=$(ls *__info.dat | wc -l)
+  input_arg="$(basename -- $trial_subfolder)"
+  echo $trial_subfolder $nproc $input_arg
+  cd $root_dir/halo
+  if [ -e "$trial_subfolder/use_gpu.txt" ]
+  then
+      echo "Running on GPU: ${trial_subfolder}"
+      mpirun -n $nproc --oversubscribe -mca coll_hcoll_enable 0 ./main_halo_gpu $input_arg
+  else
+      echo "Running on CPU: ${trial_subfolder}"
+      mpirun -n $nproc --oversubscribe -mca coll_hcoll_enable 0 ./main_halo_cpu $input_arg
+  fi
+done
+
+python3 $root_dir/transpose/error_checker.py
+python3 $root_dir/halo/error_checker.py
+
+# ---------------------------------- end job ----------------------------------
+
+cat *.out
+cat *.out | grep passed

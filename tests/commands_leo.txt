@@ -1,0 +1,62 @@
+
+anaconda_module=anaconda3/2023.09-0
+module load $anaconda_module
+
+# ------------------------------- working directory -------------------------------
+# please adjust working directory
+root_dir=/leonardo/home/userexternal/$USER/diezDecomp-main/tests
+cd $root_dir
+
+ntrials=100
+ipython $root_dir/transpose/transposes.py $ntrials
+ipython $root_dir/halo/halos_asym.py $ntrials
+module unload $anaconda_module
+
+# --------------- modules ---------------
+module load openmpi/4.1.4--nvhpc--23.1-cuda-11.8 nccl/2.14.3-1--gcc--11.3.0-cuda-11.8 nvhpc/23.1
+
+export NVHPC_HOME=/leonardo/prod/spack/03/install/0.19/linux-rhel8-icelake/gcc-8.5.0/nvhpc-23.1-x5lw6edfmfuot2ipna3wseallzl4oolm/Linux_x86_64/23.1
+export CUDA_HOME=${NVHPC_HOME}/cuda
+export NVHPC_CUDA_HOME=${CUDA_HOME}
+export MPI_HOME=${NVHPC_HOME}/comm_libs/hpcx/latest/ompi
+export NCCL_HOME=${NVHPC_HOME}/comm_libs/nccl
+export CUFFT_HOME=${NVHPC_HOME}/math_libs
+export CUTENSOR_HOME=${NVHPC_HOME}/math_libs
+export CUDACXX_HOME=${CUDA_HOME}
+
+# Optional variables
+export CUDA_CC_LIST=80
+export BUILD_FORTRAN=1
+export ENABLE_NVTX=1
+export ENABLE_NVSHMEM=0
+export NVSHMEM_HOME=${NVHPC_HOME}/comm_libs/nvshmem
+
+export LD_LIBRARY_PATH="$MPI_HOME:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$MPI_HOME/lib:$LD_LIBRARY_PATH"
+
+export HPCX_HOME=${NVHPC_HOME}/comm_libs/hpcx/latest
+source $HPCX_HOME/hpcx-init.sh
+export NCCL_LAUNCH_MODE=GROUP
+export NCCL_DEBUG=WARN
+export NCCL_SOCKET_IFNAME=enp1s0f0
+export NCCL_DEBUG_SUBSYS=INIT,ENV,GRAPH
+export UCX_RC_TIMEOUT=10s
+export NCCL_IB_TIMEOUT=20
+export NCCL_NET=IB
+
+# ------------------------------- compile -------------------------------
+
+cd $root_dir/transpose
+mpif90  -lmpi -noacc     -cpp -D_USE_CUDA -r8 -mcmodel=medium -O3 -o main_transp_cpu  ./../../src/diezdecomp_core.f90 ./../../src/diezdecomp_api_generic.f90 ./../../src/diezdecomp_api_cans.f90 main_transp.f90
+mpif90  -lmpi -acc -cuda -cpp -D_USE_CUDA -r8 -mcmodel=medium -O3 -o main_transp_gpu  ./../../src/diezdecomp_core.f90 ./../../src/diezdecomp_api_generic.f90 ./../../src/diezdecomp_api_cans.f90 main_transp.f90
+chmod u+x main_transp_cpu
+chmod u+x main_transp_gpu
+
+cd $root_dir/halo
+mpif90  -lmpi -noacc     -cpp -D_USE_CUDA -r8 -mcmodel=medium -O3 -o main_halo_cpu  ./../../src/diezdecomp_core.f90 ./../../src/diezdecomp_api_cans.f90  ./../../src/diezdecomp_api_generic.f90 main_halo.f90
+mpif90  -lmpi -acc -cuda -cpp -D_USE_CUDA -r8 -mcmodel=medium -O3 -o main_halo_gpu  ./../../src/diezdecomp_core.f90 ./../../src/diezdecomp_api_cans.f90  ./../../src/diezdecomp_api_generic.f90 main_halo.f90
+chmod u+x main_halo_cpu
+chmod u+x main_halo_gpu
+
+cd $root_dir
+sbatch job_test_leo.slurm
