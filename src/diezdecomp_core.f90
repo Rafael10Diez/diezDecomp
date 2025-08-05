@@ -18,7 +18,7 @@ module diezdecomp_core
   integer, parameter :: rp = dp
   integer, parameter :: MPI_REAL_RP = MPI_DOUBLE_PRECISION
 #endif
-  real(dp), parameter            :: LARGE = huge(1._rp)
+  real(dp), parameter            :: LARGE = huge(1._dp)
   integer(acc_handle_kind), save :: diezdecomp_stream_default = 1
   logical, save                  :: diezdecomp_mode_bench_avg = .false.
   private
