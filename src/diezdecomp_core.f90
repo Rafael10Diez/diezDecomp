@@ -18,7 +18,7 @@ module diezdecomp_core
   integer, parameter :: rp = dp
   integer, parameter :: MPI_REAL_RP = MPI_DOUBLE_PRECISION
 #endif
-  real(dp), parameter            :: LARGE = huge(1._dp)
+  real(dp), parameter            :: LARGE = huge(1._rp)
   integer(acc_handle_kind), save :: diezdecomp_stream_default = 1
   logical, save                  :: diezdecomp_mode_bench_avg = .false.
   private
@@ -193,18 +193,18 @@ module diezdecomp_core
       do i = 0,1
         if (this%args_active(i)) then
           call pack_slices_halo(p, buffer, this%args_pos_send(i), this%args_inds_send_i0(i), &
-                                                                this%args_inds_send_i1(i), &
-                                                                this%dir_pick, this%loc_shape, this%nh_ijk, .true., &
-                                                                this%offset3, this%autotuned_pack,wtime_2,wtime_3, stream)
+                                                                  this%args_inds_send_i1(i), &
+                                                                  this%dir_pick, this%loc_shape, this%nh_ijk, .true., &
+                                                                  this%offset3, this%autotuned_pack,wtime_2,wtime_3, stream)
         end if
       end do
       call comm_halo_mpi(this, buffer, stream)
       do i = 0,1
         if (this%args_active(i)) then
           call pack_slices_halo(p, buffer, this%args_pos_recv(i), this%args_inds_recv_i0(i), &
-                           this%args_inds_recv_i1(i), &
-                           this%dir_pick, this%loc_shape, this%nh_ijk, .false.,&
-                           this%offset3, this%autotuned_pack,wtime_2,wtime_3, stream)
+                                                                  this%args_inds_recv_i1(i), &
+                                                                  this%dir_pick, this%loc_shape, this%nh_ijk, .false.,&
+                                                                  this%offset3, this%autotuned_pack,wtime_2,wtime_3, stream)
 
         end if
       end do
@@ -304,7 +304,7 @@ if (this%irank /= this%args_other_id(1-i)) error stop 'ERROR: halos ids:' ! , th
                 offset3(0:2)
     logical  :: mode_fwd
     integer(acc_handle_kind) :: stream
-    real(rp) :: elapsed_time, temp_wtime, wtime_2, wtime_3
+    real(dp) :: elapsed_time, temp_wtime, wtime_2, wtime_3
     if ((autotuned < 2).or.(3 < autotuned)) then
       do mode_iter=2,3
         if (diezdecomp_mode_bench_avg) then ; elapsed_time = 0.
