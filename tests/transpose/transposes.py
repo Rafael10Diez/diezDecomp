@@ -159,11 +159,11 @@ def main_runner():
                 div_xyz_ii      =  [random.randint(1,divmax)      for _ in range(3)]
                 n_xyz           =  [random.randint(d,d*nloc_max)  for d in div_xyz_ii]
                 div_xyz_ii[ii]  =  1
-                nproc           =  np.product(div_xyz_ii)
+                nproc           =  np.prod(div_xyz_ii)
 
             if any_to_any:
                 div_xyz_jj = [float('inf')]
-                while np.product(div_xyz_jj) != nproc:
+                while np.prod(div_xyz_jj) != nproc:
                     div_xyz_jj      =  [random.randint(1,divmax)      for _ in range(3)]
                     div_xyz_jj[jj]  =  1
             else:
@@ -207,20 +207,18 @@ def main_runner():
         fname         =  lambda irank,key: pjoin(input_folder, f'input_{irank:06d}{padstr(key,12)}.dat')
         buffer        =  {}
         for key,(px,lo_a,hi_a) in p_xyz_ii.items():
-            irank                                 =  ranks_ii[key]
-            (py,lo_b,hi_b),                       =  [val for key,val in p_xyz_jj.items() if (ranks_jj[key]==irank)]
-            loc_order_a                           =  loc_order_ii
-            loc_order_b                           =  loc_order_jj
-            pads_x, pads_y,pads_x_bad,pads_y_bad  =  [[random.randint(0,4) for _ in range(6)] for _ in range(4)]
-            use_cans_change_offsets               =  random.randint(0,1)
-            if use_cans_change_offsets:
-                def fix_pad():
-                    # pads_? is [h h h h+p h+p h+p]
-                    # initially is h h h p p p
-                    for j in range(3,6):
-                        pads_x[j] += pads_x[j-3]
-                        pads_y[j] += pads_y[j-3]
-                fix_pad()
+            irank            =  ranks_ii[key]
+            (py,lo_b,hi_b),  =  [val for key,val in p_xyz_jj.items() if (ranks_jj[key]==irank)]
+            loc_order_a      =  loc_order_ii
+            loc_order_b      =  loc_order_jj
+            pads_x, pads_y   =  [[random.randint(0,4) for _ in range(6)] for _ in range(2)]
+            def fix_pad():
+                # pads_? is [h h h h+p h+p h+p]
+                # initially is h h h p p p
+                for j in range(3,6):
+                    pads_x[j] += pads_x[j-3]
+                    pads_y[j] += pads_y[j-3]
+            fix_pad()
             autotune_opts                         =  lambda: [random.randint(0,1), random.randint(1,2), random.randint(1,6), random.randint(1,6)]
             force_send_autotune, send_autotuned, send_mode_op_simul, send_mode_op_batched = autotune_opts()
             force_recv_autotune, recv_autotuned, recv_mode_op_simul, recv_mode_op_batched = autotune_opts()
@@ -237,15 +235,10 @@ def main_runner():
                                               ' '.join(map(str,lo_b))        + ' ! lo_b'       ,
                                               ' '.join(map(str,hi_a))        + ' ! hi_a'       ,
                                               ' '.join(map(str,hi_b))        + ' ! hi_b'       ,
-                                              ' '.join(map(str, pads_x    )) + ' ! pads_x',
-                                              ' '.join(map(str, pads_y    )) + ' ! pads_y',
-
-                                             f'{int(use_cans_change_offsets)} ! use_cans_change_offsets' ,
-                                              ' '.join(map(str, pads_x_bad)) + ' ! pads_x_bad',
-                                              ' '.join(map(str, pads_y_bad)) + ' ! pads_y_bad',
-
-                                              *writer_nd(padded(px,pads_x), 'px_padded') ,
-                                              *writer_nd(padded(py,pads_y), 'py_padded') ,
+                                              ' '.join(map(str, pads_x    )) + ' ! pads_x'     ,
+                                              ' '.join(map(str, pads_y    )) + ' ! pads_y'     ,
+                                              *writer_nd(padded(px,pads_x), 'px_padded')       ,
+                                              *writer_nd(padded(py,pads_y), 'py_padded')       ,
                                               *all_modeops                                     ])
         print('Writing trial folder: ', trial_folder)
         writer_base(fname, buffer)
