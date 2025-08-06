@@ -356,6 +356,8 @@ module diezdecomp_api_cans
                                         sp_in_full , gd%all_ap(ii)%offset6          , &
                                         sp_out_full, gd%all_ap(jj)%offset6          , &
                                         diezdecomp_allow_autotune_reorder, stream   )
+      gd%obj_tr(ii,jj)%offset6_in  = 0
+      gd%obj_tr(ii,jj)%offset6_out = 0
     end if
     offset6_in  = gd%obj_tr(ii,jj)%offset6_in
     offset6_out = gd%obj_tr(ii,jj)%offset6_out
