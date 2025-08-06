@@ -335,15 +335,15 @@ module diezdecomp_api_cans
     implicit none
     type(diezdecompGridDesc) :: gd
     real(rp)                 :: p_in(:,:,:), p_out(:,:,:), work(:)
-    integer                  :: ii, jj, kk, ii_jj_kk(0:2), sp_in_full(0:2), sp_out_full(0:2), abs_reorder(0:2), &
-                                offset6_in(0:2,0:1), offset6_out(0:2,0:1), i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2)
+    integer                  :: ii, jj, kk, ii_jj_kk(0:2), abs_reorder(0:2), &
+                                offset6_in(0:2,0:1), offset6_out(0:2,0:1), i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2), &
+                                zeros6(0:2,0:1)
     logical                  :: allow_alltoallv, is_device_synchronize
     integer(acc_handle_kind) :: stream
     if (.not.(gd%obj_tr(ii,jj)%initialized)) then
       kk       = 3 - ii - jj
       ii_jj_kk = [ii,jj,kk]
-      sp_in_full  = [size(p_in, 1), size(p_in, 2), size(p_in, 3)]
-      sp_out_full = [size(p_out,1), size(p_out,2), size(p_out,3)]
+      zeros6   = 0
       abs_reorder = gd%abs_reorder(ii,jj,:)
       call diezdecomp_fill_transp_props(gd%obj_tr(ii,jj)                            , &
                                         abs_reorder                                 , &
@@ -353,11 +353,9 @@ module diezdecomp_api_cans
                                         gd%all_ap(jj)%lo - 1, gd%all_ap(jj)%hi - 1  , &
                                         ii_jj_kk                                    , &
                                         gd%irank, gd%nproc,allow_alltoallv          , &
-                                        sp_in_full , gd%all_ap(ii)%offset6          , &
-                                        sp_out_full, gd%all_ap(jj)%offset6          , &
+                                        gd%all_ap(ii)%shape, zeros6                 , &
+                                        gd%all_ap(jj)%shape, zeros6                 , &
                                         diezdecomp_allow_autotune_reorder, stream   )
-      gd%obj_tr(ii,jj)%offset6_in  = 0
-      gd%obj_tr(ii,jj)%offset6_out = 0
     end if
     offset6_in  = gd%obj_tr(ii,jj)%offset6_in
     offset6_out = gd%obj_tr(ii,jj)%offset6_out
