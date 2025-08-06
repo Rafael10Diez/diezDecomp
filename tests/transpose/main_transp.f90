@@ -25,15 +25,17 @@ program main
   integer                           ::  order_x(0:2), order_y(0:2), order_intermediate(0:2), &
                                         sx0, sx1, sx2, sy0, sy1, sy2, &
                                         lo_a(0:2), lo_b(0:2), hi_a(0:2), hi_b(0:2), &
-                                        read_int1, read_int2, read_int3, read_int4, &
+                                        read_int1, read_int2, read_int3, read_int4, read_int5, &
                                         send_autotuned, recv_autotuned, send_mode_op_simul, recv_mode_op_simul,&
                                         force_send_autotune, force_recv_autotune, offset6_in(0:2,0:1), offset6_out(0:2,0:1), &
+                                        offset6_in_bad(0:2,0:1), offset6_out_bad(0:2,0:1), &
                                         send_mode_op_batched, recv_mode_op_batched,i0,i1,j0,j1,k0,k1
-  logical                           ::  allow_alltoallv, mode_api_cans, allow_autotune_reorder, mode_use_buf
+  logical                           ::  allow_alltoallv, mode_api_cans, allow_autotune_reorder, mode_use_buf, &
+                                        use_cans_change_offsets
   character(len=62)                 ::  fname_62
   character(len=11)                 ::  fname_11
   real(rp)                          ::  read_real, elapse_time
-  real(rp), allocatable, target     ::  py_ref(:,:,:), buffer(:), px_orig(:,:,:), py_buf(:), px_buf(:)
+  real(rp), allocatable, target     ::  py_ref(:,:,:), buffer(:), px_orig(:,:,:), py_buf(:), px_buf(:), px_bad(:,:,:), py_bad(:,:,:)
   real(rp), pointer                 ::  py(:,:,:), px(:,:,:)
   integer(i8)                       ::  wsize
   type(diezdecomp_props_transp)     ::  tr
@@ -95,6 +97,10 @@ program main
         read(54,*) hi_b
         read(54,*) offset6_in
         read(54,*) offset6_out
+        read(54,*) read_int5
+        use_cans_change_offsets = (read_int5==1)
+        read(54,*) offset6_in_bad
+        read(54,*) offset6_out_bad
 
         read(54,*) sx0,sx1,sx2
         allocate(px_orig(0:sx0-1,0:sx1-1,0:sx2-1))
@@ -153,8 +159,14 @@ program main
     gd%all_ap(ii)%hi(1:3)  =  hi_a(0:2) + 1
     gd%all_ap(jj)%lo(1:3)  =  lo_b(0:2) + 1
     gd%all_ap(jj)%hi(1:3)  =  hi_b(0:2) + 1
-    gd%all_ap(ii)%offset6  =  offset6_in
-    gd%all_ap(jj)%offset6  =  offset6_out
+
+    if (use_cans_change_offsets) then 
+      gd%all_ap(ii)%offset6  =  offset6_in_bad
+      gd%all_ap(jj)%offset6  =  offset6_out_bad
+    else
+      gd%all_ap(ii)%offset6  =  offset6_in
+      gd%all_ap(jj)%offset6  =  offset6_out
+    end if
 
     gd%irank                           =  irank
     gd%nproc                           =  nproc
@@ -203,7 +215,26 @@ program main
 
 
   if (mode_api_cans) then
-    call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false.)
+    block 
+      integer :: i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2)
+      i_halo = -1
+      o_halo = -1
+      i_pad  = -1
+      o_pad  = -1
+      if (use_cans_change_offsets) then 
+        allocate(px_bad(0:(sx0 -  offset6_in(0,0) -  offset6_in(0,1) +  offset6_in_bad(0,0) +  offset6_in_bad(0,1) )-1,&
+                        0:(sx1 -  offset6_in(1,0) -  offset6_in(1,1) +  offset6_in_bad(1,0) +  offset6_in_bad(1,1) )-1,&
+                        0:(sx2 -  offset6_in(2,0) -  offset6_in(2,1) +  offset6_in_bad(2,0) +  offset6_in_bad(2,1) )-1),&
+                 py_bad(0:(sy0 - offset6_out(0,0) - offset6_out(0,1) + offset6_out_bad(0,0) + offset6_out_bad(0,1) )-1,&
+                        0:(sy1 - offset6_out(1,0) - offset6_out(1,1) + offset6_out_bad(1,0) + offset6_out_bad(1,1) )-1,&
+                        0:(sy2 - offset6_out(2,0) - offset6_out(2,1) + offset6_out_bad(2,0) + offset6_out_bad(2,1) )-1))
+        call diezDecomp_boilerplate_transpose(gd, px_bad, py_bad, buffer, ii, jj,allow_alltoallv, stream, .false., &
+                                              i_halo, o_halo, i_pad, o_pad)
+      else
+        call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false., &
+                                              i_halo, o_halo, i_pad, o_pad)
+      end if
+    end block 
     !$acc wait
     associate(obj => gd%obj_tr(ii,jj))
       if (force_send_autotune==1) then
@@ -217,6 +248,7 @@ program main
         obj%recv_mode_op_batched = recv_mode_op_batched
       end if
       write(6,*) irank,'mode_api_cans'           , mode_api_cans            ;flush(6)
+      write(6,*) irank,'use_cans_change_offsets' , use_cans_change_offsets  ;flush(6)
       write(6,*) irank,'mode_use_buf'            , mode_use_buf             ;flush(6)
       write(6,*) irank,'force_send_autotune'     , force_send_autotune      ;flush(6)
       write(6,*) irank,'obj%send_autotuned'      , obj%send_autotuned       ;flush(6)
@@ -240,6 +272,7 @@ program main
         obj%recv_mode_op_batched = recv_mode_op_batched
       end if
       write(6,*) irank,'mode_api_cans'           , mode_api_cans            ;flush(6)
+      write(6,*) irank,'use_cans_change_offsets' , use_cans_change_offsets  ;flush(6)
       write(6,*) irank,'mode_use_buf'            , mode_use_buf             ;flush(6)
       write(6,*) irank,'force_send_autotune'     , force_send_autotune      ;flush(6)
       write(6,*) irank,'obj%send_autotuned'      , obj%send_autotuned       ;flush(6)
@@ -264,7 +297,24 @@ program main
   !$acc wait
   elapse_time = MPI_Wtime()
   if (mode_api_cans)  then
-    call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false.)
+    block 
+      integer :: i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2)
+      if (use_cans_change_offsets) then 
+        i_pad  = offset6_in(:,1) - offset6_in(:,0)
+        i_halo = offset6_in(:,1) - i_pad
+        o_pad  = offset6_out(:,1) - offset6_out(:,0)
+        o_halo = offset6_out(:,1) - o_pad
+        call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false., &
+                                              i_halo, o_halo, i_pad, o_pad)
+      else
+        i_halo = -1
+        o_halo = -1
+        i_pad  = -1
+        o_pad  = -1
+        call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false., &
+                                              i_halo, o_halo, i_pad, o_pad)
+      end if
+    end block 
   else
     if (mode_use_buf) then
       call diezdecomp_transp_execute_generic_buf(tr, px, py, buffer, stream)
