@@ -216,7 +216,7 @@ def main_runner():
             if use_cans_change_offsets:
                 def fix_pad():
                     # pads_? is [h h h h+p h+p h+p]
-                    # initially is h h h p p p 
+                    # initially is h h h p p p
                     for j in range(3,6):
                         pads_x[j] += pads_x[j-3]
                         pads_y[j] += pads_y[j-3]

@@ -114,12 +114,12 @@ program main
     periodic_xyz(ii)  =  (read_int0 == 1)
   end block
   ! -------------------- End: read data --------------------
-  
+
   ! local padding (offset6)
   offset6  =   all_offset6(irank,:,:)
 
   ! allocate 3D arrays
-  block 
+  block
     integer :: sx_0, sx_1, sx_2
     ! shape local array [sx_0, sx_1, sx_2]
     sx_0 = all_n3(irank,0) + sum(offset6(0,:))
@@ -132,9 +132,9 @@ program main
   end block
 
   ! ------------------------- Begin: Verification Array Setup -------------------------
-  block 
+  block
     integer :: lo_loc(0:2), lo_xyz(0:2), n_global(0:2), inv_order_halo(0:2)
-    
+
     ! reversed order (useful to have)
     block
       integer :: i,j
@@ -180,7 +180,7 @@ program main
     lo_loc(0) = lo_xyz(order_halo(0))
     lo_loc(1) = lo_xyz(order_halo(1))
     lo_loc(2) = lo_xyz(order_halo(2))
-    
+
     ! define reference values (A_ref)
     block
       integer :: i,j,k, ijk_loc(0:2), ijk_0(0:2), axis, jj, kk, sz_jj, sz_kk
@@ -209,7 +209,7 @@ program main
             valid    =  (ijk_0(ii)>=0).and.(ijk_0(ii)<n_global(ii))
             valid    =  valid.and.(ijk_0(jj)>=lo_xyz(jj)).and.(ijk_0(jj)<sz_jj)
             valid    =  valid.and.(ijk_0(kk)>=lo_xyz(kk)).and.(ijk_0(kk)<sz_kk)
-            if (valid) then 
+            if (valid) then
                A_ref(i+offset6(0,0), &
                       j+offset6(1,0), &
                       k+offset6(2,0))  =  ijk_0(0)*n_global(1)*n_global(2) + ijk_0(1)*n_global(2) + ijk_0(2) + 1
@@ -222,8 +222,8 @@ program main
   ! ------------------------- End: Verification Array Setup -------------------------
 
   ! Copy inner part of verification array (without halo cells or offset6) to "A"
-  block 
-    integer :: i0,i1,j0,j1,k0,k1 
+  block
+    integer :: i0,i1,j0,j1,k0,k1
     i0  =               offset6(0,0) + nh_xyz(order_halo(0))
     j0  =               offset6(1,0) + nh_xyz(order_halo(1))
     k0  =               offset6(2,0) + nh_xyz(order_halo(2))
@@ -231,7 +231,7 @@ program main
     j1  =  size(A,2) - offset6(1,1) - nh_xyz(order_halo(1)) - 1
     k1  =  size(A,3) - offset6(2,1) - nh_xyz(order_halo(2)) - 1
     A(i0:i1,j0:j1,k0:k1) = A_ref(i0:i1,j0:j1,k0:k1)
-  end block 
+  end block
 
   ! initialize diezDecomp
   block
@@ -242,12 +242,12 @@ program main
     ! lo_ref: reference [i,j,k] coordinates to track the grid layout for the MPI tasks.
     !     - please note that "lo_xyz" could be used instead of "lo_ref = flat_mpi_ranks(irank,:)"
     !     - both alternatives accomplish the same purpose
-    lo_ref         = flat_mpi_ranks(irank,:) 
+    lo_ref         = flat_mpi_ranks(irank,:)
     call diezdecomp_track_mpi_decomp(lo_ref, obj_ranks, irank, nproc)
     call diezdecomp_generic_fill_hl_obj(hl, obj_ranks, A_shape, offset6, ii, nh_xyz, order_halo, periodic_xyz, wsize,&
                                         use_halo_sync, autotuned_pack)
   end block
-  
+
   ! allocate work buffer
   allocate(work(0:wsize-1))
   work = -1

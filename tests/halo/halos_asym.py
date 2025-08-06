@@ -195,7 +195,7 @@ def main_runner():
         
         def get_ref_incomplete():
             all_p_xyz_incomplete  =  mk_rand_shards(nh_xyz, pieces_xyz)
-            all_px_shape          =  {key: [arr[k] for arr in [np.array(val.shape)-2*np.array(nh_xyz)] for k in abs_order] 
+            all_px_shape          =  {key: [arr[k] for arr in [np.array(val.shape)-2*np.array(nh_xyz)] for k in abs_order]
                                       for key,val in all_p_xyz_incomplete.items()}
 
             all_p_xyz_ref         =  quick_halo_propagate(all_p_xyz_incomplete, nh_xyz, is_per, ii)

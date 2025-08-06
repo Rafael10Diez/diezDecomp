@@ -160,7 +160,7 @@ program main
     gd%all_ap(jj)%lo(1:3)  =  lo_b(0:2) + 1
     gd%all_ap(jj)%hi(1:3)  =  hi_b(0:2) + 1
 
-    if (use_cans_change_offsets) then 
+    if (use_cans_change_offsets) then
       gd%all_ap(ii)%offset6  =  offset6_in_bad
       gd%all_ap(jj)%offset6  =  offset6_out_bad
     else
@@ -215,13 +215,13 @@ program main
 
 
   if (mode_api_cans) then
-    block 
+    block
       integer :: i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2)
       i_halo = -1
       o_halo = -1
       i_pad  = -1
       o_pad  = -1
-      if (use_cans_change_offsets) then 
+      if (use_cans_change_offsets) then
         allocate(px_bad(0:(sx0 -  offset6_in(0,0) -  offset6_in(0,1) +  offset6_in_bad(0,0) +  offset6_in_bad(0,1) )-1,&
                         0:(sx1 -  offset6_in(1,0) -  offset6_in(1,1) +  offset6_in_bad(1,0) +  offset6_in_bad(1,1) )-1,&
                         0:(sx2 -  offset6_in(2,0) -  offset6_in(2,1) +  offset6_in_bad(2,0) +  offset6_in_bad(2,1) )-1),&
@@ -234,7 +234,7 @@ program main
         call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false., &
                                               i_halo, o_halo, i_pad, o_pad)
       end if
-    end block 
+    end block
     !$acc wait
     associate(obj => gd%obj_tr(ii,jj))
       if (force_send_autotune==1) then
@@ -297,9 +297,9 @@ program main
   !$acc wait
   elapse_time = MPI_Wtime()
   if (mode_api_cans)  then
-    block 
+    block
       integer :: i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2)
-      if (use_cans_change_offsets) then 
+      if (use_cans_change_offsets) then
         i_pad  = offset6_in(:,1) - offset6_in(:,0)
         i_halo = offset6_in(:,1) - i_pad
         o_pad  = offset6_out(:,1) - offset6_out(:,0)
@@ -314,7 +314,7 @@ program main
         call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false., &
                                               i_halo, o_halo, i_pad, o_pad)
       end if
-    end block 
+    end block
   else
     if (mode_use_buf) then
       call diezdecomp_transp_execute_generic_buf(tr, px, py, buffer, stream)
