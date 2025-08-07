@@ -40,44 +40,64 @@ module diezdecomp_api_generic
 
   contains
 
-  subroutine diezdecomp_transp_execute_generic_buf(this, p_in, p_out, work, stream)
+  subroutine diezdecomp_transp_execute_generic_buf(this, p_in, p_out, work, offset_3x2_in, offset_3x2_out, stream)
     implicit none
     type(diezdecomp_props_transp)      :: this
     real(rp), target                   :: p_in(:,:,:), p_out(:,:,:)
     real(rp), target                   :: work(0:)
+    integer                            ::    offset6_in(0:2,0:1),    offset6_out(0:2,0:1)
+    integer                 , optional :: offset_3x2_in(0:2,0:1), offset_3x2_out(0:2,0:1)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
     stream_internal  =  diezdecomp_stream_default
     if (present(stream)) stream_internal = stream
+    if (present(offset_3x2_in )) then ; offset6_in  = this%offset6_in  ; this%offset6_in  = offset_3x2_in  ; end if
+    if (present(offset_3x2_out)) then ; offset6_out = this%offset6_out ; this%offset6_out = offset_3x2_out ; end if
     call diezdecomp_transp_execute(this, p_in, p_out, stream_internal, work)
+    if (present(offset_3x2_in )) then ; this%offset6_in  = offset6_in  ; end if ! restore original offsets
+    if (present(offset_3x2_out)) then ; this%offset6_out = offset6_out ; end if
     if (.not.present(stream)) then
       !$acc wait(stream_internal)
     end if
   end subroutine
 
-  subroutine diezdecomp_transp_execute_generic_nobuf(this, p_in, p_out, stream)
+  subroutine diezdecomp_transp_execute_generic_nobuf(this, p_in, p_out, offset_3x2_in, offset_3x2_out, stream)
     implicit none
     type(diezdecomp_props_transp)      :: this
     real(rp), target                   :: p_in(0:*), p_out(0:*)
+    integer                            ::    offset6_in(0:2,0:1),    offset6_out(0:2,0:1)
+    integer                 , optional :: offset_3x2_in(0:2,0:1), offset_3x2_out(0:2,0:1)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
     stream_internal  =  diezdecomp_stream_default
     if (present(stream)) stream_internal = stream
+    if (present(offset_3x2_in )) then ; offset6_in  = this%offset6_in  ; this%offset6_in  = offset_3x2_in  ; end if
+    if (present(offset_3x2_out)) then ; offset6_out = this%offset6_out ; this%offset6_out = offset_3x2_out ; end if
     call diezdecomp_transp_execute(this, p_in, p_out, stream_internal)
+    if (present(offset_3x2_in )) then ; this%offset6_in  = offset6_in  ; end if ! restore original offsets
+    if (present(offset_3x2_out)) then ; this%offset6_out = offset6_out ; end if
     if (.not.present(stream)) then
       !$acc wait(stream_internal)
     end if
   end subroutine
 
-  subroutine diezdecomp_halos_execute_generic(this, p, work, stream)
+  subroutine diezdecomp_halos_execute_generic(this, p, work, offset3_start, stream)
     implicit none
     type(diezdecomp_props_halo) :: this
     real(rp), contiguous :: p(0:,0:,0:), work(0:)
+    integer                            :: offset3(0:2)
+    integer                 , optional :: offset3_start(0:2)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
+    ! note:
+    !   1) "offset3_start" are the offsets of p(0:,0:,0:) at the begging of each dimension
+    !   2) technically, knowing the offsets at the end (offset3_end) is not necessary,
+    !      because "p" is passed as a 3-D array (assumed shape is not used)
     stream_internal  =  diezdecomp_stream_default
     if (present(stream)) stream_internal = stream
+    if (present(offset3_start)) then ; offset3  = this%offset3  ; this%offset3  = offset3_start  ; end if
     call diezdecomp_halos_execute(this, p, work, stream_internal)
+    if (present(offset3_start)) then ; this%offset3 = offset3  ; end if ! restore original offsets
     if (.not.present(stream)) then
       !$acc wait(stream_internal)
     end if

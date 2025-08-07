@@ -211,7 +211,8 @@ def main_runner():
             (py,lo_b,hi_b),  =  [val for key,val in p_xyz_jj.items() if (ranks_jj[key]==irank)]
             loc_order_a      =  loc_order_ii
             loc_order_b      =  loc_order_jj
-            pads_x, pads_y   =  [[random.randint(0,4) for _ in range(6)] for _ in range(2)]
+            (pads_x      , pads_y,
+             pads_x_noise, pads_y_noise)  =  [[random.randint(0,4) for _ in range(6)] for _ in range(4)]
             def fix_pad():
                 # pads_? is [h h h h+p h+p h+p]
                 # initially is h h h p p p
@@ -228,15 +229,17 @@ def main_runner():
                                 f"{send_mode_op_simul} {recv_mode_op_simul} ! send_mode_op_simul recv_mode_op_simul",
                                 f"{send_mode_op_batched} {recv_mode_op_batched} ! send_mode_op_batched recv_mode_op_batched"]
             buffer[irank]   =  dict(info  =  [f"{ii} {jj} {kk} {use_alltoallv} {mode_api_cans} {allow_autotune_reorder} {mode_use_buf} ! ii jj kk use_alltoallv mode_api_cans allow_autotune_reorder mode_use_buf"               ,
-                                              ' '.join(map(str,loc_order_a)) + ' ! loc_order_a',
-                                              ' '.join(map(str,loc_order_b)) + ' ! loc_order_b',
-                                              ' '.join(map(str,abs_reorder)) + ' ! abs_reorder',
-                                              ' '.join(map(str,lo_a))        + ' ! lo_a'       ,
-                                              ' '.join(map(str,lo_b))        + ' ! lo_b'       ,
-                                              ' '.join(map(str,hi_a))        + ' ! hi_a'       ,
-                                              ' '.join(map(str,hi_b))        + ' ! hi_b'       ,
-                                              ' '.join(map(str, pads_x    )) + ' ! pads_x'     ,
-                                              ' '.join(map(str, pads_y    )) + ' ! pads_y'     ,
+                                              ' '.join(map(str,loc_order_a))   + ' ! loc_order_a' ,
+                                              ' '.join(map(str,loc_order_b))   + ' ! loc_order_b' ,
+                                              ' '.join(map(str,abs_reorder))   + ' ! abs_reorder' ,
+                                              ' '.join(map(str,lo_a))          + ' ! lo_a'        ,
+                                              ' '.join(map(str,lo_b))          + ' ! lo_b'        ,
+                                              ' '.join(map(str,hi_a))          + ' ! hi_a'        ,
+                                              ' '.join(map(str,hi_b))          + ' ! hi_b'        ,
+                                              ' '.join(map(str, pads_x    ))   + ' ! pads_x'      ,
+                                              ' '.join(map(str, pads_y    ))   + ' ! pads_y'      ,
+                                              ' '.join(map(str, pads_x_noise)) + ' ! pads_x_noise',
+                                              ' '.join(map(str, pads_y_noise)) + ' ! pads_y_noise',
                                               *writer_nd(padded(px,pads_x), 'px_padded')       ,
                                               *writer_nd(padded(py,pads_y), 'py_padded')       ,
                                               *all_modeops                                     ])
