@@ -427,6 +427,17 @@ module diezdecomp_api_cans
       call summary_cudecompGetPencilInfo(gd%all_ap(axis), axis, pdims, gdims, gdims_dist, transpose_axis_contiguous, periods, &
                                         ipencil, offset6_xyz, gd%irank, gd%nproc)
     end do
+    block 
+      integer :: i,j,k
+      do     i=0,2
+        do   j=0,2
+          do k=0,2
+            ! default initialization: gd%abs_reorder matches output "internal_order"
+            gd%abs_reorder(i,j,k) = gd%all_ap(j)%internal_order(k+1)
+          end do 
+        end do 
+      end do 
+    end block 
   end subroutine
 
   function diezdecompGetPencilInfo(ch, gd ,ap, axis)  result(ierr)
