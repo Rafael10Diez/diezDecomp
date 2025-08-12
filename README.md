@@ -11,7 +11,7 @@ Written in modern Fortran, with GPU support through OpenACC kernels and MPI.
     - Contains a core file (`diezdecomp_core.f90`), and two API versions:
         - `diezdecomp_api_cans.f90` for compatibility with the CaNS project (https://github.com/CaNS-World/CaNS)
         - `diezdecomp_api_generic.f90` for general-purpose operations, compatible with any project.
- 
+
 3) Installation:
     - Please copy the source files (`diezdecomp_core.f90` and the desired API version `diezdecomp_api_*.f90`) to your work directory, and compile them together with any other Fortran code.
     - Re-run the test suite (`./tests`) and examples (`./examples`) in the target platform to ensure full compatibility.

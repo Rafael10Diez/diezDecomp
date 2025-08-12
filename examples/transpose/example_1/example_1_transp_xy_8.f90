@@ -83,24 +83,24 @@ program main
     ! MPI grid layout is:
     ! start (x-aligned pencils): [1, 2, 4]
     ! end   (y-aligned pencils): [2, 1, 4]
-  
+
     pxy        =    2
     pz         =    4
-  
+
     nx_global  =  200
     ny_global  =  320
     nz_global  =  440
-  
+
     nx_in      =  nx_global
     ny_in      =  ny_global/pxy
     nz_in      =  nz_global/pz
-  
+
     nx_out     =  nx_global/pxy
     ny_out     =  ny_global
     nz_out     =  nz_global/pz
-  
+
     ! reference coordinates in n_x/y/z_global
-    block 
+    block
       integer :: i_xy, i_z
       i_xy         =  irank/pz
       i_z          =  mod(irank,pz)
@@ -108,14 +108,14 @@ program main
       if (i_z  >= pz ) error stop 'i_z  >= pz'
       lo_in        =  [0         , i_xy*ny_in, i_z*nz_in ]
       lo_out       =  [i_xy*nx_out,         0, i_z*nz_out]
-    end block 
-  
+    end block
+
    allocate(p_out_ref(0:nx_out-1, 0:ny_out-1, 0:nz_out-1))
    allocate(p_in_out_buf(0:(nx_in*ny_in*nz_in+nx_out*ny_out*nz_out-1)))
 
     p_in (0:nx_in -1, 0:ny_in -1, 0:nz_in -1) => p_in_out_buf(0:(nx_in*ny_in*nz_in-1))
     p_out(0:nx_out-1, 0:ny_out-1, 0:nz_out-1) => p_in_out_buf(nx_in*ny_in*nz_in:(nx_in*ny_in*nz_in+nx_out*ny_out*nz_out-1))
-  
+
     ! define reference input values (p_in)
     block
       integer :: i,j,k,i0,j0,k0
@@ -130,7 +130,7 @@ program main
         end do
       end do
     end block
-  
+
     ! define reference output values (p_out_ref)
     block
       integer :: i,j,k,i0,j0,k0
@@ -182,7 +182,7 @@ program main
 
   ! execute transpose
   call diezdecomp_transp_execute_generic_buf(tr, p_in, p_out, work)
-  
+
   !$acc wait
   !$acc exit data copyout(p_in_out_buf, work)
   !$acc wait
@@ -199,9 +199,9 @@ program main
     error stop 'ERROR: maxval(abs(p_out - p_out_ref)) > 1e-10'
   end if
 
-  if (irank == 0) then 
+  if (irank == 0) then
     write(6,'(A67,E12.4)') 'diezDecomp: example_1_transp_xy_8.f90: SUCCESS!!! error_max:  ', error_max ; flush(6)
-  end if 
+  end if
 
   call MPI_BARRIER(mpi_comm_world, mpi_ierr)
   call MPI_BARRIER(mpi_comm_world, mpi_ierr)

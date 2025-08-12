@@ -195,7 +195,7 @@ def main_runner():
         
         def get_ref_incomplete():
             all_p_xyz_incomplete  =  mk_rand_shards(nh_xyz, pieces_xyz)
-            all_px_shape          =  {key: [arr[k] for arr in [np.array(val.shape)-2*np.array(nh_xyz)] for k in abs_order] 
+            all_px_shape          =  {key: [arr[k] for arr in [np.array(val.shape)-2*np.array(nh_xyz)] for k in abs_order]
                                       for key,val in all_p_xyz_incomplete.items()}
 
             all_p_xyz_ref         =  quick_halo_propagate(all_p_xyz_incomplete, nh_xyz, is_per, ii)
@@ -227,13 +227,14 @@ def main_runner():
             fname   =  lambda irank,key: pjoin(input_folder, f'input_{irank:06d}{padstr(key,12)}.dat')
             buffer  =  {}
             for D in saved_fields.values():
-                pads_x                   =  [random.randint(0,4) for _ in range(6)]
+                pads_x, pads_x_noise     =  [[random.randint(0,4) for _ in range(6)] for _ in range(2)]
                 buffer[D['irank']]       = dict(info=[f"{ii} {axis} {int(use_halo_sync)} {int(pack_type)} {int(mode_api_cans)} ! ii axis use_halo_sync pack_type mode_api_cans"    ,
                                                       ' '.join(map(str,abs_order)) + ' ! abs_order'                                                     ,
                                                       ' '.join(map(str,nh_xyz))    + ' ! nh_xyz'                                                        ,
                                                       ' '.join(map(str,np.array(np.where(mpi_ranks_ii==D['irank'])).reshape(-1).tolist())) + ' ! lo_xyz',
                                                       str(int(is_per))                                                                     + ' ! is_per',
-                                                      ' '.join(map(str, pads_x     )) + ' ! pads_x',
+                                                      ' '.join(map(str, pads_x       )) + ' ! pads_x',
+                                                      ' '.join(map(str, pads_x_noise )) + ' ! pads_x_noise',
                                                       *writer_nd(padded(clean_borders(D['px'], nh_xyz,ii,is_per,abs_order),pads_x,seed=seed), 'px_padded'    )                                                     ,
                                                       *writer_nd(padded(D['px_ref'],pads_x,seed=seed), 'px_padded_ref')                                                     ])
             print('Writing trial folder: ', trial_folder)

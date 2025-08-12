@@ -17,7 +17,7 @@ program main
   implicit none
   integer, parameter :: rp = dp
   integer                            ::  ii,pos, i, j, k, iter, irank, nproc, mpi_ierr, ierr, &
-                                         nh_xyz(0:2), order_halo(0:2), axis, offset6(0:2,0:1), &
+                                         nh_xyz(0:2), order_halo(0:2), axis, offset6(0:2,0:1), offset6_noise(0:2,0:1), &
                                          read_int0, read_int1, numel, lo_xyz(0:2), use_halo_sync, autotuned_pack
   real(rp)                           ::  error_max
   logical                            ::  is_per, periodic(0:2), mode_api_cans
@@ -79,6 +79,7 @@ program main
         read(54,*)  read_int0
         is_per = (read_int0==1)
         read(54,*)  offset6
+        read(54,*)  offset6_noise
         read(54,*) i,j,k
         allocate(px(0:i-1,0:j-1,0:k-1))
         numel = i*j*k
@@ -100,7 +101,9 @@ program main
   call mpi_barrier(mpi_comm_world,mpi_ierr)
   enddo
   ! -------------------- end: read data --------------------
-  write(6,'(I3,A15,6I3)') irank, ' halo offset6: ', offset6 ; flush(6)
+  write(6,'(I3,A21,6I3)') irank, ' halo offset6:       ', offset6 ; flush(6)
+  write(6,'(I3,A21,6I3)') irank, ' halo offset6_noise: ', offset6_noise ; flush(6)
+  
   call diezdecomp_track_mpi_decomp(lo_xyz, ox, irank, nproc)
   periodic      =  .false.
   periodic(ii)  =  is_per
@@ -136,9 +139,10 @@ program main
     end block
   else
     block
-      integer  ::  p_shape(0:2)
-      p_shape       =  [size(px,1), size(px,2), size(px,3)]
-      call diezdecomp_generic_fill_hl_obj(hl, ox, p_shape, offset6, ii, nh_xyz, order_halo, periodic, wsize,&
+      integer  ::  p_shape(0:2), offset6_orig(0:2,0:1)
+      p_shape       =  [size(px,1), size(px,2), size(px,3)] + offset6_noise(0:2,0) + offset6_noise(0:2,1)
+      offset6_orig  =  offset6 + offset6_noise
+      call diezdecomp_generic_fill_hl_obj(hl, ox, p_shape, offset6_orig, ii, nh_xyz, order_halo, periodic, wsize,&
                                           use_halo_sync, autotuned_pack)
     end block
   end if
@@ -160,8 +164,12 @@ program main
   if (mode_api_cans) then
     call diezDecomp_boilerplate_halos(gd, px, buffer, nh_xyz, offset6, periodic, ii+1, axis, stream, .true., .true.)
   else
-    call diezdecomp_halos_execute_generic(hl, px, buffer, stream)
-    call diezdecomp_summary_halo_autotuning(hl)
+    block 
+      integer :: offset3_start(0:2)
+      offset3_start = offset6(0:2,0)
+      call diezdecomp_halos_execute_generic(hl, px, buffer, offset3_start=offset3_start, stream = stream)
+      call diezdecomp_summary_halo_autotuning(hl)
+    end block
   end if
   elapse_time   = MPI_Wtime() - elapse_time
   write(6,*) 'end: halos_execute' ; flush(6)

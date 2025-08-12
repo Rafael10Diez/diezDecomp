@@ -25,9 +25,10 @@ program main
   integer                           ::  order_x(0:2), order_y(0:2), order_intermediate(0:2), &
                                         sx0, sx1, sx2, sy0, sy1, sy2, &
                                         lo_a(0:2), lo_b(0:2), hi_a(0:2), hi_b(0:2), &
-                                        read_int1, read_int2, read_int3, read_int4, &
+                                        read_int1, read_int2, read_int3, read_int4, read_int5, &
                                         send_autotuned, recv_autotuned, send_mode_op_simul, recv_mode_op_simul,&
                                         force_send_autotune, force_recv_autotune, offset6_in(0:2,0:1), offset6_out(0:2,0:1), &
+                                        offset6_noise_in(0:2,0:1), offset6_noise_out(0:2,0:1), &
                                         send_mode_op_batched, recv_mode_op_batched,i0,i1,j0,j1,k0,k1
   logical                           ::  allow_alltoallv, mode_api_cans, allow_autotune_reorder, mode_use_buf
   character(len=62)                 ::  fname_62
@@ -95,7 +96,8 @@ program main
         read(54,*) hi_b
         read(54,*) offset6_in
         read(54,*) offset6_out
-
+        read(54,*) offset6_noise_in
+        read(54,*) offset6_noise_out
         read(54,*) sx0,sx1,sx2
         allocate(px_orig(0:sx0-1,0:sx1-1,0:sx2-1))
         do iter=1,(sx0*sx1*sx2)
@@ -153,8 +155,8 @@ program main
     gd%all_ap(ii)%hi(1:3)  =  hi_a(0:2) + 1
     gd%all_ap(jj)%lo(1:3)  =  lo_b(0:2) + 1
     gd%all_ap(jj)%hi(1:3)  =  hi_b(0:2) + 1
-    gd%all_ap(ii)%offset6  =  offset6_in
-    gd%all_ap(jj)%offset6  =  offset6_out
+    gd%all_ap(ii)%shape =  gd%all_ap(ii)%hi - gd%all_ap(ii)%lo + 1
+    gd%all_ap(jj)%shape =  gd%all_ap(jj)%hi - gd%all_ap(jj)%lo + 1
 
     gd%irank                           =  irank
     gd%nproc                           =  nproc
@@ -180,14 +182,15 @@ program main
     diezdecomp_allow_autotune_reorder = allow_autotune_reorder
   else
     block
-      integer :: spx(0:2), spy(0:2)
+      integer :: spx(0:2), spy(0:2), offset6_orig_in(0:2,0:1), offset6_orig_out(0:2,0:1)
       write(6,*) 'begin: diezdecomp_generic_fill_tr_obj' ; flush(6)
-      spx = [sx0, sx1, sx2]
-      spy = [sy0, sy1, sy2]
-
+      spx = [sx0, sx1, sx2] +  offset6_noise_in(0:2,0) +  offset6_noise_in(0:2,1)
+      spy = [sy0, sy1, sy2] + offset6_noise_out(0:2,0) + offset6_noise_out(0:2,1)
+      offset6_orig_in  = offset6_in  + offset6_noise_in
+      offset6_orig_out = offset6_out + offset6_noise_out
       call diezdecomp_track_mpi_decomp(lo_a, ox, irank, nproc, order_x)
       call diezdecomp_track_mpi_decomp(lo_b, oy, irank, nproc, order_y)
-      call diezdecomp_generic_fill_tr_obj(tr, ox, oy, spx, offset6_in, spy, offset6_out, order_x, order_y, &
+      call diezdecomp_generic_fill_tr_obj(tr, ox, oy, spx, offset6_orig_in, spy, offset6_orig_out, order_x, order_y, &
                                           order_intermediate, allow_alltoallv, ii, jj, wsize, &
                                           allow_autotune_reorder, stream)
       write(6,*) 'end: diezdecomp_generic_fill_tr_obj' ; flush(6)
@@ -203,7 +206,6 @@ program main
 
 
   if (mode_api_cans) then
-    call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false.)
     !$acc wait
     associate(obj => gd%obj_tr(ii,jj))
       if (force_send_autotune==1) then
@@ -264,12 +266,22 @@ program main
   !$acc wait
   elapse_time = MPI_Wtime()
   if (mode_api_cans)  then
-    call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false.)
+    block
+      integer :: i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2)
+      i_pad  = offset6_in(:,1) - offset6_in(:,0)
+      i_halo = offset6_in(:,1) - i_pad
+      o_pad  = offset6_out(:,1) - offset6_out(:,0)
+      o_halo = offset6_out(:,1) - o_pad
+      call diezDecomp_boilerplate_transpose(gd, px, py, buffer, ii, jj,allow_alltoallv, stream, .false., &
+                                            i_halo, o_halo, i_pad, o_pad)
+    end block
   else
     if (mode_use_buf) then
-      call diezdecomp_transp_execute_generic_buf(tr, px, py, buffer, stream)
+      call diezdecomp_transp_execute_generic_buf(tr, px, py, buffer, offset_3x2_in = offset6_in, &
+                                                 offset_3x2_out = offset6_out, stream = stream)
     else
-      call diezdecomp_transp_execute_generic_nobuf(tr, px_buf, py_buf, stream)
+      call diezdecomp_transp_execute_generic_nobuf(tr, px_buf, py_buf, offset_3x2_in = offset6_in, &
+                                                   offset_3x2_out = offset6_out, stream = stream)
     end if
   end if
   !$acc wait

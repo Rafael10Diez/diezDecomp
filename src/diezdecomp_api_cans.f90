@@ -76,103 +76,159 @@ module diezdecomp_api_cans
   contains
 
   ! ---------------------------------------- transpose halos -------------------------------------------
-  function diezdecompTransposeXtoY(ch,gd,pa,pb,work,dtype, stream) result(ierr)
+  function diezdecompTransposeXtoY(ch,gd,pa,pb,work,dtype,&
+                                   input_halo_extents, output_halo_extents, input_padding, output_padding, stream) result(ierr)
     implicit none
     type(diezdecompHandle)             :: ch
-    integer                            :: dtype, ierr
+    integer                            :: dtype, ierr, i_halo(0:2),o_halo(0:2),i_pad(0:2),o_pad(0:2)
     type(diezdecompGridDesc)           :: gd
     real(rp)                           :: pa(:,:,:), pb(:,:,:), work(:)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
+    integer, optional                  :: input_halo_extents(0:2)  ,&
+                                          output_halo_extents(0:2) ,&
+                                          input_padding(0:2)       ,&
+                                          output_padding(0:2)
     logical                            :: is_device_synchronize
     stream_internal       = diezdecomp_stream_default
     is_device_synchronize = (.not.present(stream))
     if (present(stream)) stream_internal = stream
+    if (present(input_halo_extents )) then ; i_halo = input_halo_extents  ; else ; i_halo = -1 ; end if
+    if (present(output_halo_extents)) then ; o_halo = output_halo_extents ; else ; o_halo = -1 ; end if
+    if (present(input_padding      )) then ; i_pad  = input_padding       ; else ; i_pad  = -1 ; end if
+    if (present(output_padding     )) then ; o_pad  = output_padding      ; else ; o_pad  = -1 ; end if
     call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 0, 1, diezdecomp_enable_alltoallv, stream_internal, &
-                                          is_device_synchronize)
+                                          is_device_synchronize, i_halo, o_halo, i_pad, o_pad)
     ierr = 0
   end function
 
-  function diezdecompTransposeYtoX(ch,gd,pa,pb,work,dtype, stream) result(ierr)
+  function diezdecompTransposeYtoX(ch,gd,pa,pb,work,dtype,&
+                                   input_halo_extents, output_halo_extents, input_padding, output_padding, stream) result(ierr)
     implicit none
     type(diezdecompHandle)             :: ch
-    integer                            :: dtype, ierr
+    integer                            :: dtype, ierr, i_halo(0:2),o_halo(0:2),i_pad(0:2),o_pad(0:2)
     type(diezdecompGridDesc)           :: gd
     real(rp)                           :: pa(:,:,:), pb(:,:,:), work(:)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
+    integer, optional                  :: input_halo_extents(0:2)  ,&
+                                          output_halo_extents(0:2) ,&
+                                          input_padding(0:2)       ,&
+                                          output_padding(0:2)
     logical                            :: is_device_synchronize
     stream_internal       = diezdecomp_stream_default
     is_device_synchronize = (.not.present(stream))
     if (present(stream)) stream_internal = stream
+    if (present(input_halo_extents )) then ; i_halo = input_halo_extents  ; else ; i_halo = -1 ; end if
+    if (present(output_halo_extents)) then ; o_halo = output_halo_extents ; else ; o_halo = -1 ; end if
+    if (present(input_padding      )) then ; i_pad  = input_padding       ; else ; i_pad  = -1 ; end if
+    if (present(output_padding     )) then ; o_pad  = output_padding      ; else ; o_pad  = -1 ; end if
     call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 1, 0, diezdecomp_enable_alltoallv, stream_internal, &
-                                          is_device_synchronize)
+                                          is_device_synchronize, i_halo, o_halo, i_pad, o_pad)
     ierr = 0
   end function
 
-  function diezdecompTransposeYtoZ(ch,gd,pa,pb,work,dtype, stream) result(ierr)
+  function diezdecompTransposeYtoZ(ch,gd,pa,pb,work,dtype,&
+                                   input_halo_extents, output_halo_extents, input_padding, output_padding, stream) result(ierr)
     implicit none
     type(diezdecompHandle)             :: ch
-    integer                            :: dtype, ierr
+    integer                            :: dtype, ierr, i_halo(0:2),o_halo(0:2),i_pad(0:2),o_pad(0:2)
     type(diezdecompGridDesc)           :: gd
     real(rp)                           :: pa(:,:,:), pb(:,:,:), work(:)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
+    integer, optional                  :: input_halo_extents(0:2)  ,&
+                                          output_halo_extents(0:2) ,&
+                                          input_padding(0:2)       ,&
+                                          output_padding(0:2)
     logical                            :: is_device_synchronize
     stream_internal       = diezdecomp_stream_default
     is_device_synchronize = (.not.present(stream))
     if (present(stream)) stream_internal = stream
+    if (present(input_halo_extents )) then ; i_halo = input_halo_extents  ; else ; i_halo = -1 ; end if
+    if (present(output_halo_extents)) then ; o_halo = output_halo_extents ; else ; o_halo = -1 ; end if
+    if (present(input_padding      )) then ; i_pad  = input_padding       ; else ; i_pad  = -1 ; end if
+    if (present(output_padding     )) then ; o_pad  = output_padding      ; else ; o_pad  = -1 ; end if
     call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 1, 2, diezdecomp_enable_alltoallv, stream_internal, &
-                                          is_device_synchronize)
+                                          is_device_synchronize, i_halo, o_halo, i_pad, o_pad)
     ierr = 0
   end function
 
-  function diezdecompTransposeZtoY(ch,gd,pa,pb,work,dtype, stream) result(ierr)
+  function diezdecompTransposeZtoY(ch,gd,pa,pb,work,dtype,&
+                                   input_halo_extents, output_halo_extents, input_padding, output_padding, stream) result(ierr)
     implicit none
     type(diezdecompHandle)             :: ch
-    integer                            :: dtype, ierr
+    integer                            :: dtype, ierr, i_halo(0:2),o_halo(0:2),i_pad(0:2),o_pad(0:2)
     type(diezdecompGridDesc)           :: gd
     real(rp)                           :: pa(:,:,:), pb(:,:,:), work(:)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
+    integer, optional                  :: input_halo_extents(0:2)  ,&
+                                          output_halo_extents(0:2) ,&
+                                          input_padding(0:2)       ,&
+                                          output_padding(0:2)
     logical                            :: is_device_synchronize
     stream_internal       = diezdecomp_stream_default
     is_device_synchronize = (.not.present(stream))
     if (present(stream)) stream_internal = stream
+    if (present(input_halo_extents )) then ; i_halo = input_halo_extents  ; else ; i_halo = -1 ; end if
+    if (present(output_halo_extents)) then ; o_halo = output_halo_extents ; else ; o_halo = -1 ; end if
+    if (present(input_padding      )) then ; i_pad  = input_padding       ; else ; i_pad  = -1 ; end if
+    if (present(output_padding     )) then ; o_pad  = output_padding      ; else ; o_pad  = -1 ; end if
     call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 2, 1, diezdecomp_enable_alltoallv, stream_internal, &
-                                          is_device_synchronize)
+                                          is_device_synchronize, i_halo, o_halo, i_pad, o_pad)
     ierr = 0
   end function
 
-  function diezdecompTransposeXtoZ(ch,gd,pa,pb,work,dtype, stream) result(ierr)
+  function diezdecompTransposeXtoZ(ch,gd,pa,pb,work,dtype,&
+                                   input_halo_extents, output_halo_extents, input_padding, output_padding, stream) result(ierr)
     implicit none
     type(diezdecompHandle)             :: ch
-    integer                            :: dtype, ierr
+    integer                            :: dtype, ierr, i_halo(0:2),o_halo(0:2),i_pad(0:2),o_pad(0:2)
     type(diezdecompGridDesc)           :: gd
     real(rp)                           :: pa(:,:,:), pb(:,:,:), work(:)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
+    integer, optional                  :: input_halo_extents(0:2)  ,&
+                                          output_halo_extents(0:2) ,&
+                                          input_padding(0:2)       ,&
+                                          output_padding(0:2)
     logical                            :: is_device_synchronize
     stream_internal       = diezdecomp_stream_default
     is_device_synchronize = (.not.present(stream))
     if (present(stream)) stream_internal = stream
-    call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 0, 2,.false., stream_internal, is_device_synchronize)
+    if (present(input_halo_extents )) then ; i_halo = input_halo_extents  ; else ; i_halo = -1 ; end if
+    if (present(output_halo_extents)) then ; o_halo = output_halo_extents ; else ; o_halo = -1 ; end if
+    if (present(input_padding      )) then ; i_pad  = input_padding       ; else ; i_pad  = -1 ; end if
+    if (present(output_padding     )) then ; o_pad  = output_padding      ; else ; o_pad  = -1 ; end if
+    call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 0, 2,.false., stream_internal, &
+                                          is_device_synchronize, i_halo, o_halo, i_pad, o_pad)
     ierr = 0
   end function
 
-  function diezdecompTransposeZtoX(ch,gd,pa,pb,work,dtype, stream) result(ierr)
+  function diezdecompTransposeZtoX(ch,gd,pa,pb,work,dtype,&
+                                   input_halo_extents, output_halo_extents, input_padding, output_padding, stream) result(ierr)
     implicit none
     type(diezdecompHandle)             :: ch
-    integer                            :: dtype, ierr
+    integer                            :: dtype, ierr, i_halo(0:2),o_halo(0:2),i_pad(0:2),o_pad(0:2)
     type(diezdecompGridDesc)           :: gd
     real(rp)                           :: pa(:,:,:), pb(:,:,:), work(:)
     integer(acc_handle_kind), optional :: stream
     integer(acc_handle_kind)           :: stream_internal
+    integer, optional                  :: input_halo_extents(0:2)  ,&
+                                          output_halo_extents(0:2) ,&
+                                          input_padding(0:2)       ,&
+                                          output_padding(0:2)
     logical                            :: is_device_synchronize
     stream_internal       = diezdecomp_stream_default
     is_device_synchronize = (.not.present(stream))
     if (present(stream)) stream_internal = stream
-    call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 2, 0,.false., stream_internal, is_device_synchronize)
+    if (present(input_halo_extents )) then ; i_halo = input_halo_extents  ; else ; i_halo = -1 ; end if
+    if (present(output_halo_extents)) then ; o_halo = output_halo_extents ; else ; o_halo = -1 ; end if
+    if (present(input_padding      )) then ; i_pad  = input_padding       ; else ; i_pad  = -1 ; end if
+    if (present(output_padding     )) then ; o_pad  = output_padding      ; else ; o_pad  = -1 ; end if
+    call diezdecomp_boilerplate_transpose(gd, pa, pb, work, 2, 0,.false., stream_internal, &
+                                          is_device_synchronize, i_halo, o_halo, i_pad, o_pad)
     ierr = 0
   end function
 
@@ -275,18 +331,19 @@ module diezdecomp_api_cans
 
   ! ---------------------------------------- boilerplate transpose/halos -------------------------------------------
   subroutine diezdecomp_boilerplate_transpose(gd, p_in, p_out, work, ii, jj, &
-                                              allow_alltoallv, stream, is_device_synchronize)
+                                              allow_alltoallv, stream, is_device_synchronize, i_halo, o_halo, i_pad, o_pad)
     implicit none
     type(diezdecompGridDesc) :: gd
     real(rp)                 :: p_in(:,:,:), p_out(:,:,:), work(:)
-    integer                  :: ii, jj, kk, ii_jj_kk(0:2), sp_in_full(0:2), sp_out_full(0:2), abs_reorder(0:2)
+    integer                  :: ii, jj, kk, ii_jj_kk(0:2), abs_reorder(0:2), &
+                                offset6_in(0:2,0:1), offset6_out(0:2,0:1), i_halo(0:2), o_halo(0:2), i_pad(0:2), o_pad(0:2), &
+                                zeros6(0:2,0:1)
     logical                  :: allow_alltoallv, is_device_synchronize
     integer(acc_handle_kind) :: stream
     if (.not.(gd%obj_tr(ii,jj)%initialized)) then
       kk       = 3 - ii - jj
       ii_jj_kk = [ii,jj,kk]
-      sp_in_full  = [size(p_in, 1), size(p_in, 2), size(p_in, 3)]
-      sp_out_full = [size(p_out,1), size(p_out,2), size(p_out,3)]
+      zeros6   = 0
       abs_reorder = gd%abs_reorder(ii,jj,:)
       call diezdecomp_fill_transp_props(gd%obj_tr(ii,jj)                            , &
                                         abs_reorder                                 , &
@@ -296,11 +353,23 @@ module diezdecomp_api_cans
                                         gd%all_ap(jj)%lo - 1, gd%all_ap(jj)%hi - 1  , &
                                         ii_jj_kk                                    , &
                                         gd%irank, gd%nproc,allow_alltoallv          , &
-                                        sp_in_full , gd%all_ap(ii)%offset6          , &
-                                        sp_out_full, gd%all_ap(jj)%offset6          , &
+                                        gd%all_ap(ii)%shape, zeros6                 , &
+                                        gd%all_ap(jj)%shape, zeros6                 , &
                                         diezdecomp_allow_autotune_reorder, stream   )
     end if
+    offset6_in  = gd%obj_tr(ii,jj)%offset6_in
+    offset6_out = gd%obj_tr(ii,jj)%offset6_out
+    if ((i_halo(0)>=0).and.(i_pad(0)>=0)) then
+      gd%obj_tr(ii,jj)%offset6_in(:,0)  =  i_halo
+      gd%obj_tr(ii,jj)%offset6_in(:,1)  =  i_halo + i_pad
+    end if
+    if ((o_halo(0)>=0).and.(o_pad(0)>=0)) then
+      gd%obj_tr(ii,jj)%offset6_out(:,0)  =  o_halo
+      gd%obj_tr(ii,jj)%offset6_out(:,1)  =  o_halo + o_pad
+    end if
     call diezdecomp_transp_execute(gd%obj_tr(ii,jj), p_in, p_out, stream, work)
+    gd%obj_tr(ii,jj)%offset6_in  = offset6_in
+    gd%obj_tr(ii,jj)%offset6_out = offset6_out
     if (is_device_synchronize) then
       !$acc wait(stream)
     end if
@@ -358,6 +427,17 @@ module diezdecomp_api_cans
       call summary_cudecompGetPencilInfo(gd%all_ap(axis), axis, pdims, gdims, gdims_dist, transpose_axis_contiguous, periods, &
                                         ipencil, offset6_xyz, gd%irank, gd%nproc)
     end do
+    block 
+      integer :: i,j,k
+      do     i=0,2
+        do   j=0,2
+          do k=0,2
+            ! default initialization: gd%abs_reorder matches output "internal_order"
+            gd%abs_reorder(i,j,k) = gd%all_ap(j)%internal_order(k+1)
+          end do 
+        end do 
+      end do 
+    end block 
   end subroutine
 
   function diezdecompGetPencilInfo(ch, gd ,ap, axis)  result(ierr)
