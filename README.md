@@ -7,7 +7,8 @@ Written in modern Fortran, with GPU support through OpenACC kernels and MPI.
     - CPU-based clusters (gfortran MPI, etc.)
 
 2) Key features:
-    - Supports advanced any-to-any transpose operations between mismatched 2D pencil decompositions (as shown in the `./tests` folder). Further details are explained in the paper listed below.
+    - Supports advanced any-to-any transpose operations between mismatched 2D pencil decompositions (as shown in the `./tests` folder):<br>
+<img src="img/any-to-any-transpose.jpg" alt="drawing" width="290"/><br>Further details are explained in the paper listed below.
     - Contains a core file (`diezdecomp_core.f90`), and two API versions:
         - `diezdecomp_api_cans.f90` for compatibility with the CaNS project (https://github.com/CaNS-World/CaNS)
         - `diezdecomp_api_generic.f90` for general-purpose operations, compatible with any project.
