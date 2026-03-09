@@ -30,5 +30,5 @@ Written in modern Fortran, with GPU support through OpenACC kernels and MPI.
     - For asynchronous transpose operations (`mpi_isend/mpi_irecv`), `diezDecomp` is able to detect when information is local to each MPI task (`sender=receiver`), and it schedules a local buffer copy without expensive MPI calls.
         - This can result in massive performance improvements for 2D pencil decompositions with few partitions along one dimension (e.g. `2 x 512` to `4 x 512`).
 
-6) Reference article:
-    - Rafael Diez Sanhueza, Jurriaan Peeters, Pedro Costa (2025). A pencil-distributed finite-difference solver for extreme-scale calculations of turbulent wall flows at high Reynolds number. (https://arxiv.org/abs/2502.06296)
+6) Related article:
+    - Rafael Diez Sanhueza, Jurriaan Peeters, Pedro Costa. "A pencil-distributed finite-difference solver for extreme-scale calculations of turbulent wall flows at high Reynolds number". Computer Physics Communications, vol. 316, p.109811, Nov. 2025. (https://www.sciencedirect.com/science/article/pii/S0010465525003133)
